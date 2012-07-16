@@ -1,14 +1,19 @@
-<div>
-    <%= form.label :title %>
-    <%= form.text_field :title %>
-</div>
+    <div>
+        <%= form.label :title %>
+        <%= form.text_field :title %>
+    </div>
 
-<div>
-    <%= form.label :content %>
-    <%= form.text_area :content %>
-</div>
+    <div>
+        <%= form.label :author %>
+        <%= select :post, :author_id, @authors.map{|a| [a.name,a.id] } %>
+    </div>
 
-<div>
-  <%= form.label :published %>
-  <%= form.check_box :published %>
-</div>
+    <div>
+        <%= form.label :content %>
+        <%= form.text_area :content %>
+    </div>
+
+    <div>
+        <%= form.label :published %>
+        <%= form.check_box :published %>
+    </div>

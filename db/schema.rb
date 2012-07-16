@@ -11,7 +11,13 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20120716140258) do
+ActiveRecord::Schema.define(:version => 20120716191336) do
+
+  create_table "authors", :force => true do |t|
+    t.string   "name"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
 
   create_table "comments", :force => true do |t|
     t.integer  "post_id"
@@ -26,11 +32,13 @@ ActiveRecord::Schema.define(:version => 20120716140258) do
   create_table "posts", :force => true do |t|
     t.string   "title"
     t.text     "content"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.datetime "created_at",                :null => false
+    t.datetime "updated_at",                :null => false
     t.boolean  "published"
+    t.integer  "author_id",  :default => 1, :null => false
   end
 
+  add_index "posts", ["author_id"], :name => "index_posts_on_author_id"
   add_index "posts", ["published"], :name => "index_posts_on_published"
 
 end

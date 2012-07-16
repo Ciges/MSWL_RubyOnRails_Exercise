@@ -2,10 +2,10 @@
 
 <%= form_for @post do |form| %>
 
-  <%= errors_for @post %>
+    <%= errors_for @post %>
 
-  <%= render form %>
+    <%= render form %>
 
-  <%= form.submit %> or <%= link_to 'cancel', post_path %>
+    <%= form.submit %> or <%= link_to 'cancel', post_path %>
 
 <% end %>

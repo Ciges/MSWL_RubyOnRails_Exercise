@@ -2,8 +2,9 @@
     <h2><%= link_to post.title, post %></h2>
     <div class="date">
         <%= t 'post.created_at' %> <%= l post.created_at, :format => :post %>
+        <%= t 'post.by' %> <%= post.author.name %>
     </div>
     <div class="content">
         <%= markdown post.content %>
     </div>
-<% end %> 
+<% end %>

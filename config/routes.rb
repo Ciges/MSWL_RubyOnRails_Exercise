@@ -1,4 +1,6 @@
 Blog::Application.routes.draw do
+  resources :authors
+
     resources :posts do
         resources :comments, :only => [:new, :create]
         get :drafts, :on => :collection
