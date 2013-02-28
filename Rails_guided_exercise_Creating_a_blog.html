@@ -1,0 +1,1115 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>
+
+
+  
+    
+    
+    
+  
+  <div>
+
+<h1>1. Rails Guided Exercice: Creating a Blog</h1>
+
+<p><em>by David Barral Precedo (<a href="mailto:david.barral@trabesoluciones.com" target="_blank">david.barral@trabesoluciones.<wbr>com</a>) and Asís
+García Chao (<a href="mailto:asis.garcia@trabesoluciones.com" target="_blank">asis.garcia@trabesoluciones.<wbr>com</a>)</em></p>
+<hr style="height:1px">
+
+<p><b>Remember that you have to follow the setup instructions (setup.html
+document) before reading this tutorial.  We also strongly recommend you to
+complete the Introduction to Ruby (introduction to ruby.html)</b>.</p>
+
+<h2>1.1 The Code repo!</h2>
+
+<p>To help you with this exercise we have created a Git repo on Github <a href="https://github.com/trabe-mswl/blog" target="_blank">github.com/trabe-mswl/blog</a>.
+Each part of this document has a correspondent tagged commit in the repo.
+You can see the changes made to the code each step using the git diff
+command. For example, to see what we did in step 1.2.2 use:</p>
+
+<pre>$ git diff 1.2.2..1.2.3</pre>
+
+<p>Tags starts with 1.2.2. If some step does not imply code changes you’ll get
+an empty diff  (what else can be expected?).</p>
+
+<p>You should start from scratch and use the repo only if you feel the need
+for a clean and ready to roll  source.</p>
+
+<h2>1.2. Application setup</h2>
+
+<h3>1.2.1. Generate the application skeleton</h3>
+
+<p>To create a new application we use the rails new command</p>
+
+<pre>$ rails new blog
+$ cd blog</pre>
+
+<p>You should take a look around. See all the files that have been generated
+for you. Read the comments.</p>
+
+<h3>1.2.2. Setup .rvmrc</h3>
+
+<p><em>rvm</em> allows the automatic selection of the ruby interpreter in a
+per directory basis using .rvmrc files</p>
+
+<pre>$ echo "rvm use ruby-1.9.3-p194" &gt;&gt; .rvmrc</pre>
+
+<p>Next time you enter the folder you will be prompted to trust the .rvmrc
+file</p>
+
+<h3>1.2.3. Manage dependencies with Bundler</h3>
+
+<p>Rails 3 comes with Bundler [<a href="http://gembundler.com/" target="_blank">gembundler.com</a>] a tool for dependency
+management. Our rails application will define its dependencies in the
+<em>Gemfile</em> file. By default there would be a dependency to rails and
+some comments in the file. Read the comments. It’s a good starting point.</p>
+
+<p>As we said earlier we are going to use sqlite3 so we need the dependency to
+the ruby library.</p>
+
+<p>Make sure the following lines are uncommentd in your <em>Gemfile</em></p>
+
+<pre>source '<a href="http://rubygems.org/" target="_blank">http://rubygems.org</a>'
+
+gem 'rails', '3.2.5'
+gem 'sqlite3'</pre>
+
+<p>If you remember, we spoke about the need of a JS runtime in the setup
+document  (Common problems 7). You can uncomment the “therubyracer” gem.</p>
+
+<pre>gem 'therubyracer', :platforms =&gt; :ruby</pre>
+
+<p>Now you can tell Bundle to istall in your system the missing dependencies</p>
+
+<pre>$ bundle install</pre>
+
+<p><b>Remember</b>: each time you modify the Gemfile you must run <tt>bundle
+install</tt></p>
+
+<h3>1.2.4. Run the application for the first time</h3>
+
+<p>Rails comes with a Rack [<a href="http://rack.rubyforge.org/" target="_blank">rack.rubyforge.org</a>] based development
+server that can be launched with <tt>rails server</tt> or the abbreviated
+version <tt>rails s</tt></p>
+
+<pre>$ rails s
+=&gt; Booting WEBrick
+=&gt; Rails 3.2.5 application starting in development on <a href="http://0.0.0.0:3000/" target="_blank">http://0.0.0.0:3000</a>
+=&gt; Call with -d to detach
+=&gt; Ctrl-C to shutdown server
+[2010-07-21 13:30:07] INFO  WEBrick 1.3.1
+[2010-07-21 13:30:07] INFO  ruby 1.9.2 (2010-07-11) [x86_64-linux]
+[2010-07-21 13:30:07] INFO  WEBrick::HTTPServer#start: pid=14807 port=3000</pre>
+
+<p>If you point your browser to <a href="http://localhost:3000/" target="_blank">localhost:3000</a> you should see the default
+welcome page</p>
+
+<p><b>Remember</b>: You can see all the <tt>rails</tt> command options by
+using <tt>rails help</tt></p>
+
+<h3>1.2.5. Get rid of the default index.page</h3>
+
+<p>You can remove the default index page by deleting two files:</p>
+
+<pre>$ rm public/index.html
+$ rm app/assets/images/rails.png</pre>
+
+<p>After that if you reload the page you should get a <tt>routing error</tt></p>
+
+<h3>1.2.6. Config files</h3>
+
+<p>There are several config files. You can explore the generated application
+skeleton to take a peek. Most of them are commented. The default
+configuration will suffice for now. For example the database configuration
+file <tt>config/database.yml</tt> is already configured to use SQLite3</p>
+
+<pre>development:
+  adapter: sqlite3
+  database: db/development.sqlite3
+  pool: 5
+  timeout: 5000</pre>
+
+<h2>1.3. Creating Resources: the Post</h2>
+
+<h3>1.3.1. Generate the resource</h3>
+
+<p>The most basic element of our blog is the post. We will start by creating
+an adecuate resource, using the <tt>rails generate</tt> (or <tt>rails
+g</tt>) command.</p>
+
+<pre>$ rails g
+Usage: rails generate GENERATOR [args] [options]
+
+General options:
+ -h, [--help]     # Print generators options and usage
+ ...
+
+ Please choose a generator below.
+
+ Rails:
+   ...
+   resource
+   ...
+
+$ rails g resource -h
+Usage:
+  rails generate resource NAME [field[:type][:index] field[:type][:index]] [options]
+  ...</pre>
+
+<p>Our post will have a title and a content</p>
+
+<pre>$ rails g resource post title:string content:text</pre>
+
+<p>invoke  active_record</p>
+
+<pre>create    db/migrate/20120612140501_<wbr>create_posts.rb
+create    app/models/post.rb
+invoke    test_unit
+create      test/unit/post_test.rb
+create      test/fixtures/posts.yml
+invoke  controller
+create    app/controllers/posts_<wbr>controller.rb
+invoke    erb
+create      app/views/posts
+invoke    test_unit
+create      test/functional/posts_<wbr>controller_test.rb
+invoke    helper
+create      app/helpers/posts_helper.rb
+invoke      test_unit
+create        test/unit/helpers/posts_<wbr>helper_test.rb
+invoke    assets
+invoke      coffee
+create        app/assets/javascripts/posts.<wbr>js.coffee
+invoke      scss
+create        app/assets/stylesheets/posts.<wbr>css.scss
+invoke  resource_route
+ route    resources :posts</pre>
+
+<p>The output of the command indicates that Rails have created several files
+for us. Take a look at them, do not be shy!.</p>
+
+<h3>1.3.2. Migrate the database</h3>
+
+<p>One of the files that has been created is a migration
+<tt>20100719075147_create_posts.rb</tt> (remeber that the timestamp will
+vary). This file is an agnostic way of declaring database DDL code.</p>
+
+<pre>$ rake db:migrate
+(in /home/david/temp/blog)
+==  CreatePosts: migrating ==============================<wbr>======================
+-- create_table(:posts)
+   -&gt; 0.0036s
+==  CreatePosts: migrated (0.0038s) ==============================<wbr>=============</pre>
+
+<p>Here we are using Rake [<a href="http://rake.rubyforge.org/" target="_blank">rake.rubyforge.org</a>], the Ruby version
+of the make tool. Rake is used in Rails to do a bunch of things, including
+your own Rake tasks (but that is an advanced topic). If you run
+<tt>rake</tt> with the <tt>-T</tt> option a list with all the available
+tasks will be shown.</p>
+
+<p>Now that the db is migrated we can inspect the created schema using the
+SQLite client. It is recommended to use the <tt>rails dbconsole</tt>
+command that will trigger the appropriate CLI for the configured database</p>
+
+<pre>$ rails dbconsole
+SQLite version 3.7.9 2011-11-01 00:52:41
+Enter ".help" for instructions
+Enter SQL statements terminated with a ";"
+sqlite&gt; .schema
+CREATE TABLE "posts" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "title" varchar(255), "content" text, "created_at" datetime NOT NULL, "updated_at" datetime NOT NULL);
+CREATE TABLE "schema_migrations" ("version" varchar(255) NOT NULL);
+CREATE UNIQUE INDEX "unique_schema_migrations" ON "schema_migrations" ("version");
+sqlite&gt; .quit</pre>
+
+<h3>1.3.3. Create the index action and view</h3>
+
+<p>Urls paths in rails are translated to <em>Controllers</em> and
+<em>Actions</em>. Our <tt>Post</tt> resource is handled by the
+<tt>PostsController</tt> class. Each related route will be send to the
+appropiate <em>Action</em>. Mapping between resources and
+<em>Controllers</em> can be seen by running the <tt>rake routes</tt>
+command.</p>
+
+<pre>$ rake routes
+    posts GET    /posts(.:format)          posts#index
+          POST   /posts(.:format)          posts#create
+ new_post GET    /posts/new(.:format)      posts#new
+edit_post GET    /posts/:id/edit(.:format) posts#edit
+     post GET    /posts/:id(.:format)      posts#show
+          PUT    /posts/:id(.:format)      posts#update
+          DELETE /posts/:id(.:format)      posts#destroy</pre>
+
+<p>These routes are defined in the <tt>config/routes.rb</tt> file. Take a look
+at it, it has some usefull comments.</p>
+
+<pre>Blog::Application.routes.draw do
+  resources :posts
+  ...
+end</pre>
+
+<p>So to get all posts we must code the <em>index</em> action</p>
+
+<pre>class PostsController &lt; ApplicationController
+
+  def index
+    @posts = Post.all
+  end
+end</pre>
+
+<p>Default behaviour is that after executing the method code to render a
+related ERB template. Enter the <tt>app/views/posts/index.html.erb</tt><wbr>.</p>
+
+<pre>&lt;% if @posts.empty? %&gt;
+  &lt;p&gt;
+    No posts!
+  &lt;/p&gt;
+&lt;% else %&gt;
+  &lt;!-- here be posts --&gt;
+&lt;% end %&gt;</pre>
+
+<p>We can see the results by pointing our browsers to <a href="http://localhost:3000/posts" target="_blank">localhost:3000/posts</a></p>
+
+<p>Fair enough. Obviously there are no posts so let’s create some of them. To
+do so we are going to use the rails console which can be invoked trough the
+<tt>rails console</tt> command (or <tt>rails c</tt>). The console is an
+<em>irb</em> session with the Rails application code loaded and a Rails
+environment set. Almost everything you can do in the application code can
+be done in the console.</p>
+
+<pre>$ rails c
+Loading development environment (Rails 3.0.0.beta4)
+&gt;&gt; Post
+=&gt; Post(id: integer, title: string, content: text, created_at: datetime, updated_at: datetime)
+&gt;&gt; post = Post.new :title =&gt; 'My first post', :content =&gt; 'Awesome'
+=&gt; #&lt;Post id: nil, title: "My first post", content: "Awesome", created_at: nil, updated_at: nil&gt;
+&gt;&gt; post.save
+   (0.2ms)  begin transaction
+  SQL (15.6ms)  INSERT INTO "posts" ("content", "created_at", "title", "updated_at") VALUES (?, ?, ?, ?)  [["content", "Awesome"], ["created_at", Tue, 12 Jun 2012 14:12:58 UTC +00:00], ["title", "My first post"], ["updated_at", Tue, 12 Jun 2012 14:12:58 UTC +00:00]]
+   (5.1ms)  commit transaction
+=&gt; true
+&gt;&gt; <a href="http://post.id/" target="_blank">post.id</a>
+=&gt; 1
+&gt;&gt; Post.create :title =&gt; 'My second post', :content =&gt; 'Trully awesome'
+   (0.2ms) begin transaction
+   ...
+=&gt; #&lt;Post id: 2, title: "My second post", ...&gt;
+&gt;&gt; Post.all
+  Post Load (0.6ms)  SELECT "posts".* FROM "posts"
+=&gt; [#&lt;Post id: 1, ... &gt;, #&lt;Post id: 2, ...&gt;]</pre>
+
+<p>Notice that Rails is handling automatically the ids and the timestamps just
+by having the created_at and updated_at columns in the database table.</p>
+
+<p>You can see the SQL being generated under the hood in the
+<tt>development.log</tt> file located at the <tt>logs</tt> folder. Also
+notice that by default Rails is dumping the SQL log to the console.</p>
+
+<p>If we reload the browser will get an empty page. We need to code the else
+part in <tt>index.html.erb</tt>: iterate through the posts and render them</p>
+
+<pre>&lt;% for post in @posts %&gt;
+  &lt;%= div_for post do %&gt;
+    &lt;h2&gt;&lt;%= post.title %&gt;&lt;/h2&gt;
+    &lt;div class="content"&gt;
+      &lt;%= post.content %&gt;
+    &lt;/div&gt;
+  &lt;% end %&gt;
+&lt;% end %&gt;</pre>
+
+<p>Now go for the finishing touch. Add a header to the application layout
+located at <tt>app/views/layouts/application.<wbr>html.erb</tt></p>
+
+<pre>...
+&lt;body&gt;
+&lt;h1&gt;My awesome blog&lt;/h1&gt;
+&lt;%= yield %&gt;
+...</pre>
+
+<p>Also make the post index page the welcome page of your application by
+changing the routes file (<tt>config/routes.rb</tt>)</p>
+
+<pre>root :to =&gt; "posts#index"</pre>
+
+<h3>1.3.4. Create the show action and view</h3>
+
+<p>As we did before we must add the relevant <em>action</em></p>
+
+<pre>def show
+  @post = Post.find(params[:id])
+end</pre>
+
+<p>and <em>view</em>: <tt>app/views/post/show.html.erb</tt></p>
+
+<pre>&lt;%= div_for @post do %&gt;
+  &lt;h2&gt;&lt;%= @post.title %&gt;&lt;/h2&gt;
+  &lt;div class="content"&gt;
+    &lt;%= @post.content %&gt;
+  &lt;/div&gt;
+&lt;% end %&gt;</pre>
+
+<p>It would be nice to have some links from the index view. Just change the
+<tt>h2</tt> in <tt>app/views/post/index.html.erb</tt></p>
+
+<pre>&lt;h2&gt;&lt;%= link_to post.title, post %&gt;&lt;/h2&gt;</pre>
+
+<h3>1.3.5. Avoid duplication: extract partial for post</h3>
+
+<p>Our <em>index</em> and <em>show</em> templates have some duplication so
+let’s refactor the code. We can use a <em>partial</em>: a piece of template
+that can be rendered inside other templates. We create a file
+<tt>app/views/posts/_post.html.erb</tt> with the following contents:</p>
+
+<pre>&lt;%= div_for post do %&gt;
+  &lt;h2&gt;&lt;%= link_to post.title, post %&gt;&lt;/h2&gt;
+  &lt;div class="content"&gt;
+    &lt;%= post.content %&gt;
+  &lt;/div&gt;
+&lt;% end %&gt;</pre>
+
+<p><b>Remember</b>: the partial file name always starts with an underscore.</p>
+
+<p>We must change the <tt>index.html.erb</tt> and <tt>show.html.erb</tt>
+templates to use the partial. In the <tt>index</tt> we must change the
+<em>else</em> branch.</p>
+
+<pre>&lt;% else %&gt;
+  &lt;%= render @posts %&gt;
+&lt;% end %&gt;</pre>
+
+<p>the <tt>show</tt> gets reduced to a single line plus a back link added for
+ease of navigation between pages</p>
+
+<pre>&lt;%= render @post %&gt;
+&lt;%= link_to 'All posts', posts_path %&gt;</pre>
+
+<p><b>Notice</b>: the render method automatically decide which partial and how
+many times must be rendered based on the paramater cardinality and class.
+Effing awesome!</p>
+
+<h3>1.3.6 Creating posts from the interface: new and create actions</h3>
+
+<p>To allow the creation of news posts through the web interface we have to
+create the appropriate action.</p>
+
+<pre>def new
+  @post = Post.new
+end</pre>
+
+<p>and the corresponding view</p>
+
+<pre>&lt;h2&gt;New post&lt;/h2&gt;
+
+&lt;%= form_for @post do |form| %&gt;
+
+  &lt;div&gt;
+    &lt;%= form.label :title %&gt;
+    &lt;%= form.text_field :title %&gt;
+  &lt;/div&gt;
+
+  &lt;div&gt;
+    &lt;%= form.label :content %&gt;
+    &lt;%= form.text_area :content %&gt;
+  &lt;/div&gt;
+
+  &lt;%= form.submit %&gt;
+
+&lt;% end %&gt;</pre>
+
+<p>We can also add some styling to make the forms look a little prettier.
+Stylesheets reside in the <tt>app/assets/stylesheets</tt> folder. This uses
+the brand new Rails assets pipeline. This uses a library called sprockets
+thats  capable of joining separate files into one (improving performance)
+and transform the files, thus allowing developers to use SASS to write the
+stylesheets and CoffeeScript to write  the scripts.</p>
+
+<p>By convention there is a manifest file
+<tt>app/assets/stylesheets/<wbr>application.css</tt> which  includes the other
+styles (one file per controller). Convention can be skipped (maybe use on
+file per style concerns), but it is strongly recommended to have some kind
+of assets organization.</p>
+
+<p>In this case, since we want to add some common styles let’s create a 
+&lt;tt&gt;app/assets/stylesheets/<wbr>common.css.scss&lt;/file&gt; and do some
+styling.</p>
+
+<pre>label {
+    display: block;
+}</pre>
+
+<p>If we submit the form a routing error will be issued. We need a second
+action: <tt>create</tt></p>
+
+<pre>def create
+  @post = Post.new(params[:post])
+  @post.save
+  redirect_to @post
+end</pre>
+
+<p>This way posts can be added if you point the browser to <a href="http://localhost:3000/posts/new" target="_blank">localhost:3000/posts/new</a></p>
+
+<p>Messages can be issued to our app users by using the <tt>flash</tt>. The
+<tt>flash</tt> is a temporal data storage that allows you to keep
+information for another HTTP request. There is a param in the redirect
+method to do so:</p>
+
+<pre>redirect_to @post, :notice =&gt; 'Post created'</pre>
+
+<p>To see the message we must render it in our views. So let’s place it in the
+layout</p>
+
+<pre>&lt;h1&gt;My awesome blog&lt;/h1&gt;
+
+&lt;% if flash.notice %&gt;
+  &lt;div id="flash"&gt;&lt;%= flash.notice %&gt;&lt;/div&gt;
+&lt;% end %&gt;</pre>
+
+<p>add some styles and we are done</p>
+
+<pre>#flash {
+    background-color: #383;
+    color: #FFF;
+    padding: 1em;
+    width: 80%;
+    margin: 1em auto;
+    text-align: justify;
+}</pre>
+
+<p>To ease navigation between pages we can add a link at the <tt>index</tt>
+page</p>
+
+<pre>&lt;%= link_to 'New post', new_post_path %&gt;</pre>
+
+<p>and a cancel button at the <tt>new</tt> page</p>
+
+<pre>&lt;%= form.submit %&gt; or &lt;%= link_to 'cancel', posts_path %&gt;</pre>
+
+<h3>1.3.7 The empty params problem.</h3>
+
+<p>The way the application is at this stage it’s possible to add posts without
+data. Enter the validations. Validations are placed in the model. The
+easiest  way is to use the <tt>validates</tt> method. For example, to avoid
+submission of posts without title and body we should use this line</p>
+
+<pre>validates :title, :content, :presence =&gt; true</pre>
+
+<p>Note that the Post model contains the following line:</p>
+
+<pre>attr_accessible :content, :title</pre>
+
+<p>This line instruct Rails to allow mass asignment of the content and the
+title. By default Rails does not allow mass asignment to avoid exploits.</p>
+
+<p>Now, using the console we cannot create a empty posts, and the model
+<tt>errors</tt>  attribute contains the offending attributes and error
+messages</p>
+
+<pre>&gt;&gt; reload!
+Reloading...
+=&gt; true
+&gt;&gt; Post.create
+=&gt; #&lt;Post id: nil, title: nil, content: nil, created_at: nil, updated_at: nil&gt;
+&gt;&gt; _.errors
+=&gt; #&lt;ActiveModel::Errors:<wbr>0x000000023359d0 @base=#&lt;Post id: nil, title: nil, content: nil, created_at: nil, updated_at: nil&gt;, @messages={:title=&gt;["can't be blank"], :content=&gt;["can't be blank"]}&gt;</pre>
+
+<p>We have to adjust the action to handle the validation errors</p>
+
+<pre>def create
+  @post = Post.new(params[:post])
+
+  if @post.save
+    redirect_to @post, :notice =&gt; 'Post created'
+  else
+    render 'new'
+  end
+end</pre>
+
+<p>If the post is valid it can be save so we redirect to the newly created
+post  show page. If there are errors we rerender the form again. Without
+adding some kind of visual feedback the user will be stuck clicking the
+submit button thinking that nothing is happenging.</p>
+
+<p>To show the form errors we are creating a <tt>helper</tt>: a method that
+can be invoked in a template and renders some content. Application wide
+helpers should be coded in the <tt>app/helpers/application_<wbr>helper.rb</tt>
+file.</p>
+
+<pre>module ApplicationHelper
+
+  def errors_for(model)
+    return "" if model.errors.blank?
+
+    content_tag(:div,
+      content_tag(:p, "There are errors in the form. Please fix them") +
+      content_tag(:ul, model.errors.full_messages.map {|m| content_tag :li, m}.join),
+      :class =&gt; 'form_errors')
+  end
+end</pre>
+
+<p>Notice that we are using the framework’s <tt>content_tag</tt> helper to
+create the HTML tags.</p>
+
+<p>To render the errors we must include a call to the helper in the
+<tt>new</tt> template</p>
+
+<pre>&lt;%= form_for @post do |form| %&gt;
+
+  &lt;%= errors_for @post %&gt;</pre>
+
+<p>If we try this new code the errors are not rendered as they should. Some
+tags are being escaped. In Rails all strings are escaped before being
+rendered in  the page. One way to avoid this behavior is to mark a string
+as <tt>html_safe</tt> thus avoiding the escaping. Let’s fix the helper</p>
+
+<pre>content_tag(:ul, model.errors.full_messages.map {|m| content_tag :li, m}.join.html_safe),</pre>
+
+<h3>1.3.8. Edit a post: the edit and update actions</h3>
+
+<p>Editting a post is very similar to creating one. Two actions are also
+needed.</p>
+
+<pre>def edit
+  @post = Post.find(params[:id])
+end
+
+def update
+  @post = Post.find(params[:id])
+
+  if @post.update_attributes(<wbr>params[:post])
+    redirect_to @post, :notice =&gt; 'Post updated'
+  else
+    render 'edit'
+  end
+end</pre>
+
+<p>The template is also similar, but as we did with the post earlier on, to
+avoid duplication we are going to create a partial to refactor the form
+fields: the  <tt>_form.html</tt> file:</p>
+
+<pre>&lt;div&gt;
+  &lt;%= form.label :title %&gt;
+  &lt;%= form.text_field :title %&gt;
+&lt;/div&gt;
+
+&lt;div&gt;
+  &lt;%= form.label :content %&gt;
+  &lt;%= form.text_area :content %&gt;
+&lt;/div&gt;</pre>
+
+<p>The <tt>edit</tt> template is as follows</p>
+
+<pre>&lt;h2&gt;Update post&lt;/h2&gt;
+
+&lt;%= form_for @post do |form| %&gt;
+
+  &lt;%= errors_for @post %&gt;
+
+  &lt;%= render form %&gt;
+
+  &lt;%= form.submit %&gt; or &lt;%= link_to 'cancel', post_path %&gt;
+&lt;% end %&gt;</pre>
+
+<p>We can also fix the <tt>new</tt> template to use the partial</p>
+
+<pre>&lt;h2&gt;New post&lt;/h2&gt;
+
+&lt;%= form_for @post do |form| %&gt;
+
+  &lt;%= errors_for @post %&gt;
+
+  &lt;%= render form %&gt;
+
+  &lt;%= form.submit %&gt; or &lt;%= link_to 'cancel', posts_path %&gt;
+
+&lt;% end %&gt;</pre>
+
+<p><b>Remember</b>: the form_for helper detects if the model we are using is a
+new record rendering the appropriate form (add via POST, update via
+UPDATE), so yes, that part could be extracted to the partial.</p>
+
+<p>Last but not least, some more navigation links at <tt>show.html.erb</tt></p>
+
+<pre>&lt;%= link_to 'Edit', edit_post_path %&gt; |
+&lt;%= link_to 'All posts', posts_path %&gt;</pre>
+
+<h3>1.3.9 Removing a post: destroy action</h3>
+
+<p>To remove a post we just need an action that finds the post, removes it
+from the database and redirects to the <tt>index</tt> page</p>
+
+<pre>def destroy
+  Post.find(params[:id]).destroy
+  redirect_to posts_url, :notice =&gt; 'Post destroyed'
+end</pre>
+
+<p>We add the appropriate link but telling the <tt>link_to</tt> method to use
+the DELETE HTTP verb.</p>
+
+<pre>&lt;%= link_to 'Edit', edit_post_path %&gt; |
+&lt;%= link_to 'Destroy', post_path, :method =&gt; :delete %&gt; |
+&lt;%= link_to 'All posts', posts_path %&gt;</pre>
+
+<p>For usability reasons should be fair to ask for confirmation before doing
+such a destructive action. Just by adding the <tt>confirm</tt> param Rails
+handles the  Javascript needed to show a confirm dialog.</p>
+
+<pre>&lt;%= link_to 'Destroy', post_path, :method =&gt; :delete, :confirm =&gt; 'are you sure?' %&gt;</pre>
+
+<p>Our Post reource is now coplete.</p>
+
+<h2>1.4. A little about Localization</h2>
+
+<p>Rails comes with support for localization, wich comprises both tranlating
+texts to other languages and adapting the time, currency and number
+formats.</p>
+
+<p>First of all we must set the Timezone and locale. Edit the 
+<tt>config/application.rb</tt> file and ensure you set the following config
+values</p>
+
+<pre>config.time_zone = 'Madrid'
+config.i18n.default_locale = :es</pre>
+
+<p>In the <tt>config/locales</tt> folder the application stores the different
+locale based configuration files in YAML format. The spanish one can be
+fetch  from GitHub.</p>
+
+<pre>$ curl <a href="https://raw.github.com/svenfuchs/rails-i18n/master/rails/locale/es.yml" target="_blank">https://raw.github.com/<wbr>svenfuchs/rails-i18n/master/<wbr>rails/locale/es.yml</a> &gt; config/locales/es.yml</pre>
+
+<p><b>A Server restart is needed to start using the new settings</b></p>
+
+<h3>1.4.1. <tt>localize</tt> helper</h3>
+
+<p>To localize dates, times, currency, etc. we use the <tt>localize</tt>
+helper (or its abbreviated form <tt>l</tt>). Let’s show the
+<tt>created_at</tt> attribute of the post by  adding these at the
+<tt>_post</tt> partial</p>
+
+<pre>&lt;div class="date"&gt;
+  &lt;%= l post.created_at %&gt;
+&lt;/div&gt;</pre>
+
+<p>This will render the attribute using the default format but another format
+can be used as well</p>
+
+<pre>&lt;div class="date"&gt;
+  &lt;%= l post.created_at, :format =&gt; :post %&gt;
+&lt;/div&gt;</pre>
+
+<p>New formats must be defined in the <tt>es.yml</tt> file</p>
+
+<pre>time:
+  formats:
+    default: ! '%A, %d de %B de %Y %H:%M:%S %z'
+    long: ! '%d de %B de %Y %H:%M'
+    short: ! '%d de %b %H:%M'
+    post: ! '%e de %B %Y'</pre>
+
+<h3>1.4.2. <tt>translate</tt> helper</h3>
+
+<p>To tranlaste text we use the <tt>translate</tt> helper (or its abbreviated
+form <tt>t</tt>). For example we can add a label to the date we previously
+added</p>
+
+<pre>&lt;div class="date"&gt;
+  &lt;%= t 'post.created_at' %&gt; &lt;%= l post.created_at, :format =&gt; :post %&gt;
+&lt;/div&gt;</pre>
+
+<p>Translations are also stored in the YAML files (the <tt>es.yml</tt> file):</p>
+
+<pre>es:
+  post:
+    created_at: publicado el</pre>
+
+<h2>1.5. Adding third party gems</h2>
+
+<p><em>Sometimes we need to rely on third party code</em></p>
+
+<p>What should be fun is to have some styled content in our post. To do so  we
+are going to support the Markdown Format [<a href="http://daringfireball.net/projects/markdown" target="_blank">daringfireball.net/projects/<wbr>markdown</a>/]
+using the Maruku library.</p>
+
+<p>First we have to add the dependency in the Gemfile</p>
+
+<pre>gem 'maruku'</pre>
+
+<p>Then run the Bundler</p>
+
+<pre>$ bundle install</pre>
+
+<p><b>A Server restart is needed to start using the new gem</b></p>
+
+<p>We will add a helper at <tt>app/helpers/application_<wbr>helper.rb</tt> to
+encapsulate the maruku related code</p>
+
+<pre>def markdown(text)
+  Maruku.new(text).to_html.html_<wbr>safe
+end</pre>
+
+<p>Now we can format our post contents, by modifying our <tt>_post</tt>
+partial</p>
+
+<pre>&lt;div class="content"&gt;
+  &lt;%= markdown post.content %&gt;
+&lt;/div&gt;</pre>
+
+<p>You can test it by editing a post and writing something like this</p>
+
+<pre>This sentence should have a **bold** text</pre>
+
+<h2>1.6. Adding subresources: comments</h2>
+
+<p><em>One post has many comments</em>.</p>
+
+<h3>1.6.1. Creating the comment model</h3>
+
+<p>First step is to create an appropiate model using a generator. Our comments
+have an <em>author</em> and a <em>content</em>.</p>
+
+<pre>$ rails g model comment post:references author:string content:text</pre>
+
+<p>As you can see we added a reference to posts. Rails will automatically
+create an index for performance reasons</p>
+
+<pre>class CreateComments &lt; ActiveRecord::Migration
+  def change
+    create_table :comments do |t|
+      t.references :post
+      t.string :author
+      t.text :content
+
+      t.timestamps
+    end
+    add_index :comments, :post_id
+  end
+end</pre>
+
+<p>After migrating the database using the <tt>rake db:migrate</tt> command we
+must  change the application models to reflect this new relation.</p>
+
+<p>The post has many comments:</p>
+
+<pre>class Post &lt; ActiveRecord::Base
+  has_many :comments</pre>
+
+<p>A comment belongs to a post:</p>
+
+<pre>class Comment &lt; ActiveRecord::Base
+  belongs_to :post</pre>
+
+<p>Now we can add comments to a post using the console</p>
+
+<pre>Post.last.comments.create :author =&gt; 'David', :content =&gt; 'This is my first comment'</pre>
+
+<h3>1.6.2. Viewing the comments</h3>
+
+<p>To render the comments we must change the <tt>posts/show</tt> template
+adding some  code that should be familiar</p>
+
+<pre>&lt;h3&gt;Comments&lt;/h3&gt;
+&lt;% if @post.comments.empty? %&gt;
+  &lt;p&gt;No comments&lt;/p&gt;
+&lt;% else %&gt;
+  &lt;% for comment in @post.comments %&gt;
+    &lt;em&gt;&lt;%= comment.author %&gt; says&lt;/em&gt;
+    &lt;p&gt;
+      &lt;%= comment.content %&gt;
+    &lt;/p&gt;
+  &lt;% end %&gt;
+&lt;% end %&gt;</pre>
+
+<h3>1.6.3. Submitting new comments</h3>
+
+<p>A post has many comments. A post is a resource. A Comment is another
+resource  but depends on the post. Comment must be a post sub resource.
+That can be  represented in the <tt>config/routes.rb</tt> file</p>
+
+<pre>resources :posts do
+  resources :comments, :only =&gt; [:new, :create]
+end</pre>
+
+<p>This will create the following routes:</p>
+
+<pre>   post_comments POST   /posts/:post_id/comments(.:<wbr>format)     comments#create
+new_post_comment GET    /posts/:post_id/comments/new(.<wbr>:format) comments#new</pre>
+
+<p>Let’s create the new and create comment actions starting by adding some 
+validations to the comment model.</p>
+
+<pre>validates :author, :content, :presence =&gt; true</pre>
+
+<p>Then go for the controller <tt>app/controllers/comments_<wbr>controller.rb</tt></p>
+
+<pre>class CommentsController &lt; ApplicationController
+
+  def new
+    @post = Post.find(params[:post_id])
+    @comment = @post.comments.build
+  end
+
+  def create
+    @post = Post.find(params[:post_id])
+    @comment = @post.comments.build(params[:<wbr>comment])
+
+    if @comment.save
+      redirect_to @post, :notice =&gt; 'Comment added'
+    else
+      render 'new'
+    end
+  end
+end</pre>
+
+<p>Notice that every operation with the comment is done trough the post and
+the relation between them.</p>
+
+<p>The <tt>comments/new.html.erb</tt> template is as follows</p>
+
+<pre>&lt;h2&gt;Add comment to post &lt;%= @post.title %&gt;&lt;/h2&gt;
+
+&lt;%= form_for [@post, @comment] do |form| %&gt;
+
+  &lt;%= errors_for @comment %&gt;
+
+  &lt;div&gt;
+    &lt;%= form.label :author %&gt;
+    &lt;%= form.text_field :author %&gt;
+  &lt;/div&gt;
+
+  &lt;div&gt;
+    &lt;%= form.label :content %&gt;
+    &lt;%= form.text_area :content %&gt;
+  &lt;/div&gt;
+
+  &lt;%= form.submit 'Submit comment' %&gt; or &lt;%= link_to 'cancel', @post %&gt;
+&lt;% end %&gt;</pre>
+
+<p>Notice one more time the use of both the post model and the comment model
+(in  the <tt>form_for</tt> helper) to keep the relation between them.</p>
+
+<p>Finally we add a link in the <tt>show</tt> template to this new action.</p>
+
+<pre>&lt;%= link_to 'Submit your comment', new_post_comment_path(@post) %&gt;</pre>
+
+<h2>1.7. More on queries: Arel</h2>
+
+<p>Rails uses Arel (<em>Active Relation</em>) to do the model queries allowing
+us to make complex database queries. For example we could tune the way the
+posts are shown in the <em>posts/index</em> page.</p>
+
+<pre>def index
+  @posts = Post.order('created_at desc')
+end</pre>
+
+<p>The Arel syntax is very straightforward. To play some more we are going  to
+migrate the database once more and add a <tt>published</tt> flag to the
+post model.</p>
+
+<pre>$ rails g migration add_published_to_post published:boolean:index</pre>
+
+<p>The generated migration might look like this</p>
+
+<pre>class AddPublishedToPost &lt; ActiveRecord::Migration
+  def change
+    add_column :posts, :published, :boolean
+    add_index :posts, :published
+  end
+end</pre>
+
+<p>After migrating with <tt>rake db:migrate</tt> we can play with the console.
+First of all we must update the published attribute of the posts.</p>
+
+<pre>&gt;&gt; Post.update_all :published =&gt; true
+&gt;&gt; Post.where(:published =&gt; true).count
+=&gt; 3
+&gt;&gt; Post.last.update_attribute :published, false
+=&gt; true
+&gt;&gt; Post.where(:published =&gt; true).count
+=&gt; 2</pre>
+
+<p>With all this knowledge we can go to the post model and create some
+<tt>scopes</tt>: a  way to alias complex Arel queries to a simple and
+semantic name.</p>
+
+<pre>scope :published, where(:published =&gt; true)
+scope :draft, where(:published =&gt; false)</pre>
+
+<p>Once again go to the console</p>
+
+<pre>&gt;&gt; Post.published
+=&gt; [#&lt;Post id: 1, ..., published: true&gt;, #&lt;Post id: 2, ..., published: true&gt;]
+&gt;&gt; Post.draft
+=&gt; [#&lt;Post id: 4, ..., published: false&gt;]</pre>
+
+<p>Nice! We can fix the <tt>index</tt> action</p>
+
+<pre>def index
+  @posts = Post.published.order('created_<wbr>at desc')
+end</pre>
+
+<p>That’s it. Arel methods can be chained (furthermore the query will be lazy
+evaluated. Sweet!)</p>
+
+<p>To support the new post attribute in the <tt>new</tt> and <tt>edit</tt>
+forms we just need to add the appropriate markup to the <em>_form</em>
+partial.</p>
+
+<pre>&lt;div&gt;
+  &lt;%= form.label :published %&gt;
+  &lt;%= form.check_box :published %&gt;
+&lt;/div&gt;</pre>
+
+<p>and the attribute to the list of accesible attributes in the Post model:</p>
+
+<pre>attr_accessible :content, :title, :published</pre>
+
+<p>To see the drafts we create a custom route in our post resource</p>
+
+<pre>resources :posts do
+  resources :comments, :only =&gt; [:new, :create]
+  get :drafts, :on =&gt; :collection
+end</pre>
+
+<p>its corresponding action</p>
+
+<pre>def drafts
+  @posts = Post.draft.order('created_at desc')
+end</pre>
+
+<p>the appropriate template</p>
+
+<pre>&lt;%= link_to 'All posts', posts_path %&gt;
+
+&lt;% if @posts.empty? %&gt;
+  &lt;p&gt;
+    No drafts!
+  &lt;/p&gt;
+&lt;% else %&gt;
+  &lt;%= render @posts %&gt;
+&lt;% end %&gt;</pre>
+
+<p>and some more navigation links in the <em>posts/index</em> page</p>
+
+<pre>&lt;%= link_to 'New post', new_post_path %&gt; |
+&lt;%= link_to 'Drafts', drafts_posts_path %&gt;</pre>
+
+<p><b>This is as far as we can go in this introduction. What lies ahead can
+only  be learned through self study and practice. Good luck!</b></p>
+<hr style="height:1px">
+
+<h1>2. Exercises</h1>
+
+<p><b>You must choose between one of the following exercises. Although it is
+not necessary to do all of them and it will not affect your qualifications
+we encourage you to do so</b>.</p>
+
+<p>There are two ways of sending us your work.</p>
+
+<p>1) The cool way! Make a pull request via Github (if you know how to do it
+or are willing to learn). 2) The classic way! Send us a zip with the src,
+ready to work just by doing:</p>
+
+<pre>$ bundle install
+$ rails server</pre>
+
+<h2>2.1. Add authors</h2>
+
+<p>You must add the post author. To do so we ask you to:</p>
+<ul><li>
+<p>Generate an author model. Author only has one attribute: <em>name</em></p>
+</li><li>
+<p>Migrate the database accordingly. Ensure all posts have an author</p>
+</li><li>
+<p>Add relations between the author and the posts</p>
+</li><li>
+<p>Show “by &lt;author name&gt;” in the post views</p>
+</li><li>
+<p>Use eager loading to avoid the n+1 query problem when fetching the authors</p>
+</li><li>
+<p>Change the new/edit post form to include the author field. Use a HTML
+select component</p>
+</li></ul>
+
+<p><b>Hints</b>: generate, references, belongs_to, has_many, includes, select,
+map</p>
+
+<h2>2.2. Add pagination</h2>
+
+<p>You must paginate the post in the main page. To do so we ask you to:</p>
+<ul><li>
+<p>Find the suitable plugin or gem (don’t reinvent the wheel!). There are some
+solution that excels.</p>
+</li><li>
+<p>Paginate the post index, two posts per page</p>
+</li><li>
+<p>Add pagination links: next and previous page and links to page numbers</p>
+</li></ul>
+
+<p><b>Hints</b>: kaminari, will_paginate, paginate</p>
+
+<h2>2.3. Add posts archive</h2>
+
+<p>You must create the posts archives. We want to see all post creted in a
+given date:</p>
+<ul><li>
+<p>/posts/archive/2010 route will show all posts created in the year 2010</p>
+</li><li>
+<p>/posts/archive/2010/07 will show all post created in July 2010</p>
+</li><li>
+<p>/posts/archive/2010/07/01 will show all posts created in July 1st, 2010</p>
+</li></ul>
+
+<p>To do so we ask you to:</p>
+<ul><li>
+<p>Create a route that matches the previous criteria</p>
+</li><li>
+<p>Add a method in the post model to find the posts</p>
+</li><li>
+<p>Add a controller action and a view to show the results</p>
+</li></ul>
+
+<p><b>Hints</b>: match, where, like, params, ||</p>
+<hr style="height:1px">
+
+<h1>3. References</h1>
+<dl><dt><b>Bundler</b></dt>
+<dd>
+<p><a href="http://gembundler.com/" target="_blank">gembundler.com</a></p>
+</dd><dt><b>Rack</b></dt>
+<dd>
+<p><a href="http://rack.rubyforge.org/" target="_blank">rack.rubyforge.org</a></p>
+</dd><dt><b>Railscasts</b></dt>
+<dd>
+<p><a href="http://railscasts.com/" target="_blank">railscasts.com</a></p>
+</dd><dt><b>Rails guides (Edge)</b></dt>
+<dd>
+<p><a href="http://guides.rails.info/" target="_blank">guides.rails.info</a>/</p>
+</dd><dt><b>Rake</b></dt>
+<dd>
+<p><a href="http://rake.rubyforge.org/" target="_blank">rake.rubyforge.org</a></p>
+</dd><dt><b>Ruby</b></dt>
+<dd>
+<p><a href="http://ruby-lang.org/" target="_blank">ruby-lang.org</a></p>
+</dd><dt><b>RubyDoc</b></dt>
+<dd>
+<p><a href="http://www.ruby-doc.org/" target="_blank">www.ruby-doc.org</a></p>
+</dd><dt><b>RubyGems</b></dt>
+<dd>
+<p><a href="http://rubygems.org/" target="_blank">rubygems.org</a></p>
+</dd><dt><b>Ruby on Rails</b></dt>
+<dd>
+<p><a href="http://rubyonrails.org/" target="_blank">rubyonrails.org</a></p>
+</dd><dt><b>Ruby toolbox</b></dt>
+<dd>
+<p><a href="http://ruby-toolbox.com/" target="_blank">ruby-toolbox.com</a>/</p>
+</dd><dt><b>SQLite</b></dt>
+<dd>
+<p><a href="http://sqlite.org/" target="_blank">sqlite.org</a></p>
+</dd><dt><b>Markdown</b></dt>
+<dd>
+<p><a href="http://daringfireball.net/projects/markdown" target="_blank">daringfireball.net/projects/<wbr>markdown</a></p>
+</dd><dt><b>The rails way</b></dt>
+<dd>
+<p><a href="http://www.therailsway.com/" target="_blank">www.therailsway.com</a></p>
+</dd></dl>
+
+  </div>
+
+</body></html>
